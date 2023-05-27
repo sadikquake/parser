@@ -20,7 +20,7 @@ def get_answer(url = ''):
     else:
         print('Empty url')
 
-# parse of main page
+# parse of the main page
 def parse_main_page(url):
     try:
         answer = get_answer(url)
@@ -30,9 +30,37 @@ def parse_main_page(url):
         sections_containers = container.findAll('span', {'class': 'nadpisnahlavni'})
         if len(sections_containers):
             for i in sections_containers:
-                sections.append([i.text, i.select('a')[0]['href']])
+                sections.append([i.text, i.find('a').get('href')])
             return sections
         else:
             print('No sections found')
     except:
-        print('Can\'t parse of main page')
+        print('Can\'t parse of the main page')
+
+# parse of sections pages
+def parse_section_page(url):
+    sections = parse_main_page(url)
+    if isinstance(sections, list) and len(sections):
+        elements = []
+        for section in sections:
+            try:
+                answer = get_answer(section[1])
+                if answer:
+                    soup = BeautifulSoup(answer, 'lxml')
+                    ads_continers = soup.findAll('div', {'class': 'inzeraty inzeratyflex'})
+                    if len(ads_continers):
+                        for ad in ads_continers:
+                            name = ad.find('h2', {'class': 'nadpis'}).find('a').text
+                            desc = ad.find('div', {'class': 'popis'}).text
+                            date = ad.find('span', {'class': 'velikost10'}).text
+                            price = ad.find('div', {'class': 'inzeratycena'}).find('b').text.strip()
+                            count_views = ad.find('div', {'class': 'inzeratyview'}).text
+                            elements.append([name, desc, date, price, count_views])
+                    else:
+                        print('Ads not found')
+            except:
+                print('The response of the requested section was not received')
+    else:
+        print('Sections not found')
+
+
