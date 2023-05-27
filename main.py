@@ -1,4 +1,4 @@
-import requests
+import requests, math
 from bs4 import BeautifulSoup
 
 # get answer from url
@@ -37,30 +37,26 @@ def parse_main_page(url):
     except:
         print('Can\'t parse of the main page')
 
-# parse of sections pages
-def parse_section_page(url):
-    sections = parse_main_page(url)
+# collecting the urls of all pages
+def get_all_url(sections):
     if isinstance(sections, list) and len(sections):
-        elements = []
+        urls = []
         for section in sections:
             try:
-                answer = get_answer(section[1])
+                answer = get_answer(section[1][:-1])
                 if answer:
                     soup = BeautifulSoup(answer, 'lxml')
-                    ads_continers = soup.findAll('div', {'class': 'inzeraty inzeratyflex'})
-                    if len(ads_continers):
-                        for ad in ads_continers:
-                            name = ad.find('h2', {'class': 'nadpis'}).find('a').text
-                            desc = ad.find('div', {'class': 'popis'}).text
-                            date = ad.find('span', {'class': 'velikost10'}).text
-                            price = ad.find('div', {'class': 'inzeratycena'}).find('b').text.strip()
-                            count_views = ad.find('div', {'class': 'inzeratyview'}).text
-                            elements.append([name, desc, date, price, count_views])
-                    else:
-                        print('Ads not found')
+                    count_ads = soup.find('div', {'class': 'inzeratynadpis'}).text.strip().split(' z ')[1]
+                    count_ads = int(count_ads.replace(' ',''))
+                    count_ads_page = len(soup.findAll('div', {'class': 'inzeraty inzeratyflex'}))
+                    count_all_pages = math.ceil(count_ads / count_ads_page)
+                    i = 0
+                    while i < count_all_pages:
+                        urls.append(section[1] + str(i * count_ads_page) + '/')
+                        i += 1
+                else:
+                    print('Unable to get information about the section')
             except:
                 print('The response of the requested section was not received')
     else:
         print('Sections not found')
-
-
