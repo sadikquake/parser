@@ -1,11 +1,13 @@
-import requests, math, sys
+import requests, math, sys, csv
 from bs4 import BeautifulSoup
-from datetime import date
+from datetime import date, time
 
-# message language
+url = 'https://www.bazos.cz'
 lang = 'en'
-# log file
 log = './logs/' + str(date.today()) + '.log'
+data_dir = './data/'
+urls_list = data_dir + 'urls.txt'
+urls = []
 
 # get answer from url
 def get_answer(url = ''):
@@ -27,7 +29,7 @@ def get_answer(url = ''):
         write_file(log, 'Empty url\n')
 
 # parse of the main page
-def parse_main_page(url):
+def parse_main_page():
     try:
         answer = get_answer(url)
         sections = []
@@ -36,7 +38,7 @@ def parse_main_page(url):
         sections_containers = container.findAll('span', {'class': 'nadpisnahlavni'})
         if sections_containers:
             for i in sections_containers:
-                sections.append([i.text, i.find('a').get('href')])
+                sections.append(i.find('a').get('href'))
             return sections
         else:
             write_file(log, 'No sections found\n')
@@ -44,13 +46,14 @@ def parse_main_page(url):
         write_file(log, 'Can\'t parse of the main page\n')
 
 # collecting the urls of all pages
-def get_all_url(sections):
+def get_all_url():
+    sections = parse_main_page()
+
     if isinstance(sections, list) and len(sections):
         urls = ''
-        urls_file = './data/urls.txt'
         for section in sections:
             try:
-                answer = get_answer(section[1][:-1])
+                answer = get_answer(section[:-1])
                 if answer:
                     soup = BeautifulSoup(answer, 'lxml')
                     count_ads = soup.find('div', {'class': 'inzeratynadpis'}).text.strip().split(' z ')[1]
@@ -60,27 +63,58 @@ def get_all_url(sections):
                     i = 0
                     while i < count_all_pages:
                         if not i:
-                            urls += section[1] + '\n'
+                            urls += section + '\n'
                         else:
-                            urls += section[1] + str(i * count_ads_page) + '/\n'
+                            urls += section + str(i * count_ads_page) + '/\n'
                         i += 1
                 else:
                     write_file(log, 'Unable to get information about the section\n')
             except:
                 write_file(log, 'The response of the requested section was not received\n')
         if urls:
-            write_file(urls_file, urls)
+            write_file(urls_list, urls, 'w')
     else:
         write_file(log, 'Sections not found\n')
 
+# parse of the section pages
+def parse_section_page():
+    try:
+        with open(urls_list, 'r') as f:
+            url = f.readline()
+            while url:
+                try:
+                    answer = get_answer(url)
+                    if answer:
+                        soup = BeautifulSoup(answer, 'lxml')
+                        title = soup.find('h1').text.strip()
+                        ads_continers = soup.findAll('div', {'class': 'inzeraty inzeratyflex'})
+                        if len(ads_continers):
+                            elements = []
+                            for ad in ads_continers:
+                                name = ad.find('h2', {'class': 'nadpis'}).find('a').text
+                                #desc = ad.find('div', {'class': 'popis'}).text
+                                date = clearning_var(ad.find('span', {'class': 'velikost10'}).text, 'date')
+                                price = ad.find('div', {'class': 'inzeratycena'}).find('b').text.strip()
+                                count_views = clearning_var(ad.find('div', {'class': 'inzeratyview'}).text)
+                                elements.append(name + '\n' + date + '\n' + price + '\n' + count_views + '\n\n')
+                            write_file(data_dir + str(title) + '.txt', ''.join(elements))
+                        else:
+                            write_file(log, 'Ads not found\n')
+                except:
+                    write_file(log, 'The response of the requested section was not received\n')
+                url = f.readline()
+            f.close()
+    except:
+        write_file(log, 'Unable to read url addresses from file\n')
+
 # service functions
 # writing file
-def write_file(file_name = '', data = ''):
+def write_file(file_name = '', data = '', mode = 'a+'):
     file_name = file_name.strip()
     data = data.strip()
     if file_name and data:
         try:
-            with open(file_name, 'a') as f:
+            with open(file_name, mode, encoding='utf-8') as f:
                 f.write(data)
                 f.close()
         except:
@@ -101,4 +135,3 @@ def clearning_var(var, type = 'int'):
 def check_requirements():
     if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
         print('You need python version 3.10 or higher')
-
