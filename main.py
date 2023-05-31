@@ -1,10 +1,12 @@
 import requests, math, sys, csv
 from bs4 import BeautifulSoup
-from datetime import date, time
+from datetime import date, datetime
 
 url = 'https://www.bazos.cz'
 lang = 'en'
 log = './logs/' + str(date.today()) + '.log'
+datetime_now = datetime.now()
+time_now = str(datetime_now.hour) + ':' + str(datetime_now.minute) + ':' + str(datetime_now.second)
 data_dir = './data/'
 urls_list = data_dir + 'urls.txt'
 urls = []
@@ -20,13 +22,13 @@ def get_answer(url = ''):
                 if responce.status_code == 200:
                     return responce.text
                 else:
-                    write_file(log, 'Answer is wrong\n')
+                    write_file(log, time_now + ' Answer is wrong, answer code is ' + str(responce.status_code) + '\n')
             else:
-                write_file(log, 'Answer is empty\n')
+                write_file(log, time_now + ' Answer is empty, url is ' + url + '\n')
         except:
-            write_file(log, 'Unable to get a response\n')
+            write_file(log, time_now + ' Unable to get a response\n')
     else:
-        write_file(log, 'Empty url\n')
+        write_file(log, time_now + ' Empty url\n')
 
 # parse of the main page
 def parse_main_page():
@@ -41,9 +43,9 @@ def parse_main_page():
                 sections.append(i.find('a').get('href'))
             return sections
         else:
-            write_file(log, 'No sections found\n')
+            write_file(log, time_now + ' No sections found, url is ' + url + '\n')
     except:
-        write_file(log, 'Can\'t parse of the main page\n')
+        write_file(log, time_now + ' Can\'t parse of the main page (url is ' + url + ')\n')
 
 # collecting the urls of all pages
 def get_all_url():
@@ -68,13 +70,13 @@ def get_all_url():
                             urls += section + str(i * count_ads_page) + '/\n'
                         i += 1
                 else:
-                    write_file(log, 'Unable to get information about the section\n')
+                    write_file(log, time_now + ' Unable to get information about the section\n')
             except:
-                write_file(log, 'The response of the requested section was not received\n')
+                write_file(log, time_now + ' The response of the requested section was not received\n')
         if urls:
             write_file(urls_list, urls, 'w')
     else:
-        write_file(log, 'Sections not found\n')
+        write_file(log, time_now + ' Sections not found\n')
 
 # parse of the section pages
 def parse_section_page():
@@ -99,13 +101,13 @@ def parse_section_page():
                                 elements.append(name + '\n' + date + '\n' + price + '\n' + count_views + '\n\n')
                             write_file(data_dir + str(title) + '.txt', ''.join(elements))
                         else:
-                            write_file(log, 'Ads not found\n')
+                            write_file(log, time_now + ' Ads not found\n')
                 except:
-                    write_file(log, 'The response of the requested section was not received\n')
+                    write_file(log, time_now + ' The response of the requested section was not received\n')
                 url = f.readline()
             f.close()
     except:
-        write_file(log, 'Unable to read url addresses from file\n')
+        write_file(log, time_now + ' Unable to read url addresses from file\n')
 
 # service functions
 # writing file
@@ -118,9 +120,9 @@ def write_file(file_name = '', data = '', mode = 'a+'):
                 f.write(data)
                 f.close()
         except:
-            print('Unable to write data to file')
+            print('Unable to write data to file ' + file_name)
     else:
-        write_file(log, 'No file name or data to write is specified\n')
+        write_file(log, time_now + ' No file name or data to write is specified\n')
 
 # clearing the variable
 def clearning_var(var, type = 'int'):
