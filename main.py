@@ -13,8 +13,7 @@ class Parser:
         self.urls = []
 
 # get answer from url
-    @staticmethod
-    def get_answer(url = ''):
+    def get_answer(self, url = ''):
         url = url.strip()
         if url:
             header = {'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/113.0.0.0 Safari/537.36'}
@@ -24,18 +23,18 @@ class Parser:
                     if responce.status_code == 200:
                         return responce.text
                     else:
-                        Parser.write_file(Parser.log, Parser.time_now + ' Answer is wrong, answer code is ' + str(responce.status_code) + '\n')
+                        self.write_file(self.log, self.time_now + ' Answer is wrong, answer code is ' + str(responce.status_code) + '\n')
                 else:
-                    Parser.write_file(Parser.log, Parser.time_now + ' Answer is empty, url is ' + url + '\n')
+                    self.write_file(self.log, self.time_now + ' Answer is empty, url is ' + url + '\n')
             except:
-                Parser.write_file(Parser.log, Parser.time_now + ' Unable to get a response\n')
+                self.write_file(self.log, self.time_now + ' Unable to get a response\n')
         else:
-            Parser.write_file(Parser.log, Parser.time_now + ' Empty url\n')
+            self.write_file(self.log, self.time_now + ' Empty url\n')
 
     # parse of the main page
     def parse_main_page(self):
         try:
-            answer = Parser.get_answer(self.url)
+            answer = self.get_answer(self.url)
             sections = []
             soup = BeautifulSoup(answer, 'lxml')
             container = soup.find('div', {'class': 'sirka'})
@@ -57,7 +56,7 @@ class Parser:
             urls = ''
             for section in sections:
                 try:
-                    answer = Parser.get_answer(section[:-1])
+                    answer = self.get_answer(section[:-1])
                     if answer:
                         soup = BeautifulSoup(answer, 'lxml')
                         count_ads = soup.find('div', {'class': 'inzeratynadpis'}).text.strip().split(' z ')[1]
@@ -87,7 +86,7 @@ class Parser:
                 url = f.readline()
                 while url:
                     try:
-                        answer = Parser.get_answer(url)
+                        answer = self.get_answer(url)
                         if answer:
                             soup = BeautifulSoup(answer, 'lxml')
                             title = soup.find('h1').text.strip()
@@ -139,6 +138,3 @@ class Parser:
     def check_requirements(self):
         if not (sys.version_info.major == 3 and sys.version_info.minor >= 10):
             print('You need python version 3.10 or higher')
-
-pars = Parser()
-print(pars.get_all_url())
